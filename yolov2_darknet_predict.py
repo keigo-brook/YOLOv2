@@ -1,3 +1,4 @@
+import os
 import time
 import cv2
 import numpy as np
@@ -76,29 +77,39 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="指定したパスの画像を読み込み、bbox及びクラスの予測を行う")
     parser.add_argument('path', help="画像ファイルへのパスを指定")
     args = parser.parse_args()
-    image_file = args.path
 
-    # read image
-    print("loading image...")
-    orig_img = cv2.imread(image_file)
-
+    files = os.listdir(args.path)
     predictor = CocoPredictor()
-    nms_results = predictor(orig_img)
+    for file in files:
+        image_file = args.path + '/' + file
 
-    # draw result
-    for result in nms_results:
-        left, top = result["box"].int_left_top()
-        cv2.rectangle(
-            orig_img,
-            result["box"].int_left_top(), result["box"].int_right_bottom(),
-            (0, 255, 0),
-            5
-        )
-        text = '%s(%2d%%)' % (result["label"], result["probs"].max()*result["conf"]*100)
-        cv2.putText(orig_img, text, (left, top-6), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-        print(text)
+        # read image
+        print("f: ", image_file)
+        orig_img = cv2.imread(image_file)
 
-    print("save results to yolov2_result.jpg")
-    cv2.imwrite("yolov2_result.jpg", orig_img)
-    cv2.imshow("w", orig_img)
-    cv2.waitKey()
+        nms_results = predictor(orig_img)
+
+        # draw result
+        if len(nms_results) == 0:
+            result = './result/%s' % file
+            # print("save results to %s", (result))
+            cv2.imwrite(result, orig_img)
+
+        for result in nms_results:
+            left, top = result["box"].int_left_top()
+            right, bottom = result["box"].int_right_bottom()
+            cv2.rectangle(
+                orig_img,
+                result["box"].int_left_top(), result["box"].int_right_bottom(),
+                (0, 255, 0),
+                5
+            )
+            text = '%s(%2d%%), (%d,%d):(%d,%d)' % (result["label"], result["probs"].max()*result["conf"]*100, left, top, right, bottom)
+            cv2.putText(orig_img, text, (left, top-6), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            print(text)
+
+            result = './result/%s' % file
+            # print("save results to %s", (result))
+            cv2.imwrite(result, orig_img)
+            # cv2.imshow("w", orig_img)
+            # cv2.waitKey()
